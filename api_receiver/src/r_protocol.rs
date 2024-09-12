@@ -26,7 +26,6 @@ pub struct Org {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DecryptedPayload {
   pub handles: TransactionHandles,
-  pub receipt_hash: String, // Deprecated
   pub receipt_id: String,
   pub receipt: serde_json::Value,
   pub receiver_client_id: String,

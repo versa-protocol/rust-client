@@ -15,7 +15,6 @@ use tracing::info;
 
 #[derive(Serialize)]
 pub struct ReceiptRegistrationRequest {
-  pub receipt_hash: u64,
   pub schema_version: String,
   pub handles: TransactionHandles,
   pub transaction_id: Option<String>,
@@ -100,14 +99,12 @@ pub async fn register(
   client_id: &str,
   client_secret: &str,
   handles: TransactionHandles,
-  registration_hash: u64,
 ) -> Result<ReceiptRegistrationResponse, ()> {
   let registry_url = std::env::var("REGISTRY_URL").unwrap_or_default();
   let credential = format!("Basic {}:{}", client_id, client_secret);
 
   let payload = ReceiptRegistrationRequest {
-    receipt_hash: registration_hash,
-    schema_version: "1.0.0".into(),
+    schema_version: "1.2.0".into(),
     handles,
     transaction_id: None,
   };

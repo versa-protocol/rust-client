@@ -26,22 +26,15 @@ pub async fn send(
 
   // 1. Register with Versa registry
 
-  let registration_hash = protocol::encryption::generate_hash(&receipt);
-
-  let registration_response = protocol::register(
-    &client_id,
-    &client_secret,
-    payload.handles,
-    registration_hash,
-  )
-  .await
-  .map_err(|e| {
-    info!("Registration failed: {:?}", e);
-    (
-      http::StatusCode::SERVICE_UNAVAILABLE,
-      format!("Registration failed: {:?}", e),
-    )
-  })?;
+  let registration_response = protocol::register(&client_id, &client_secret, payload.handles)
+    .await
+    .map_err(|e| {
+      info!("Registration failed: {:?}", e);
+      (
+        http::StatusCode::SERVICE_UNAVAILABLE,
+        format!("Registration failed: {:?}", e),
+      )
+    })?;
 
   info!(
     "Registration successful, received {} receivers",

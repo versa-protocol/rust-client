@@ -92,7 +92,6 @@ pub async fn target(
     receiver_client_id,
     handles: checkout.handles,
     sender: checkout.sender,
-    receipt_hash: checkout.receipt_hash,
     receipt: data,
   };
 
