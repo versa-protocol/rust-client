@@ -1,23 +1,8 @@
 use crate::r_protocol::DecryptedPayload;
-use base64::prelude::*;
-use hmac::Mac;
 use http::HeaderMap;
 use protocol::ReceiverPayload;
 use serde_json::Value;
 use tracing::info;
-
-async fn verify_with_secret(
-  body: axum::body::Body,
-  secret: String,
-  token: &str,
-) -> (bool, hyper::body::Bytes) {
-  let mut mac = hmac::Hmac::<sha1::Sha1>::new_from_slice(&secret.as_bytes()).unwrap();
-  let body_bytes = axum::body::to_bytes(body, 512_000_000).await.unwrap();
-  mac.update(body_bytes.as_ref());
-  let code_bytes = mac.finalize().into_bytes();
-  let encoded = BASE64_STANDARD.encode(&code_bytes.to_vec());
-  (encoded == token, body_bytes)
-}
 
 pub async fn target(
   headers: HeaderMap,
@@ -39,7 +24,7 @@ pub async fn target(
     ));
   };
   let (verified, body_bytes) =
-    verify_with_secret(raw_body, receiver_secret.clone(), request_token).await;
+    crate::hmac_verify::verify_with_secret(raw_body, receiver_secret.clone(), request_token).await;
   if !verified {
     return Err((
       http::StatusCode::UNAUTHORIZED,
@@ -77,7 +62,7 @@ pub async fn target(
       })?;
 
   info!("Received keys for sender: {:?}", checkout.sender);
-  let data = crate::encryption::decrypt_envelope::<Value>(envelope, &checkout.key);
+  let data = crate::decryption::decrypt_envelope::<Value>(envelope, &checkout.key);
 
   info!(
     "DATA RECEIVED FROM SENDER_CLIENT_ID={}: {:?}",

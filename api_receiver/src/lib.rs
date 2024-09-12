@@ -4,7 +4,8 @@ use axum::Router;
 pub mod routes;
 
 // TODO - move into SDK
-mod encryption;
+mod decryption;
+mod hmac_verify;
 mod model;
 mod r_config;
 mod r_protocol;
