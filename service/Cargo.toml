@@ -1,5 +1,5 @@
 [package]
-name = "rust_client"
+name = "rust-client"
 version = "0.1.0"
 edition = "2018"
 
@@ -9,12 +9,9 @@ edition = "2018"
 api_receiver = { path = "../api_receiver", optional = true }
 api_sender = { path = "../api_sender", optional = true }
 axum = { version = "0.7.5", features = [ "json" ] }
-clap = { version = "4.1.4", features = ["derive"] }
 dotenv = "0.15.0"
-futures = "0.3"
 http = "1.1.0"
 hyper = "0.14.28"
-prost = "0.11"
 serde = "1.0"
 tokio = { version = "1.37", features = ["full"] }
 tower-http = { version = "0.5.0", features = ["trace"] }
