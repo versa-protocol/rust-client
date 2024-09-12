@@ -1,10 +1,8 @@
-// TODO: This should likely be replaced by a public protocol crate
-
 use base64::prelude::*;
-use hmac::Mac;
 use serde::{Deserialize, Serialize};
 
 pub mod encryption;
+pub mod hmac_util;
 pub mod model;
 
 use model::{Envelope, Receiver};
@@ -155,14 +153,6 @@ pub struct ReceiverPayload {
   pub envelope: Envelope,
 }
 
-pub async fn generate_token(body: bytes::Bytes, secret: String) -> String {
-  let mut mac = hmac::Hmac::<sha1::Sha1>::new_from_slice(&secret.as_bytes()).unwrap();
-  mac.update(body.as_ref());
-  let code_bytes = mac.finalize().into_bytes();
-  let encoded = BASE64_STANDARD.encode(&code_bytes.to_vec());
-  encoded
-}
-
 pub async fn encrypt_and_send<T>(
   receiver: &Receiver,
   client_id: &str,
@@ -184,7 +174,7 @@ where
 
   let payload_json = serde_json::to_string(&payload).unwrap();
   let byte_body = bytes::Bytes::from(payload_json.clone());
-  let token = generate_token(byte_body, receiver.secret.clone()).await;
+  let token = hmac_util::generate_token(byte_body, receiver.secret.clone()).await;
   let client = reqwest::Client::new();
   let response_result = client
     .post(&receiver.address)
