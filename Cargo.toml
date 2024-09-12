@@ -1,0 +1,10 @@
+[workspace]
+resolver="2"
+
+members = [
+    "api_receiver",
+    "api_sender",
+    "protocol",
+    "service",
+    "util"
+]
