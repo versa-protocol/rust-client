@@ -33,7 +33,6 @@ pub struct SenderReceiptHeader {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Envelope {
   pub encrypted: String,
-  pub hash: Option<u64>,
   pub nonce: String,
 }
 

@@ -6,7 +6,6 @@ use base64::prelude::*;
 use rand::Rng;
 use serde::Serialize;
 use serde_json::json;
-use std::hash::{DefaultHasher, Hash, Hasher};
 
 use crate::model::Envelope;
 
@@ -17,26 +16,6 @@ fn generate_nonce() -> [u8; 12] {
   nonce
 }
 
-fn calculate_hash<T: Hash>(t: &T) -> u64 {
-  let mut s = DefaultHasher::new();
-  t.hash(&mut s);
-  s.finish()
-}
-
-pub fn generate_hash<T>(data: &T) -> u64
-where
-  T: Serialize,
-{
-  let serde_json_val = json!(data);
-
-  let canonicalized = match json_canon::to_string(&serde_json_val) {
-    Ok(canonicalized) => canonicalized,
-    Err(e) => panic!("Error canonicalizing JSON: {}", e),
-  };
-
-  calculate_hash(&canonicalized)
-}
-
 pub fn encrypt_envelope<T>(data: &T, key: &Vec<u8>) -> Envelope
 where
   T: Serialize,
@@ -44,7 +23,6 @@ where
   let serde_json = json!(data);
 
   let canonicalized = canonize_json(&serde_json);
-  let hash = Some(calculate_hash(&canonicalized));
   let nonce_bytes = generate_nonce();
   let nonce = Nonce::from_slice(&nonce_bytes); // unique to each receiver and included in message
   let cipher = Aes256GcmSiv::new(key[..].into());
@@ -53,7 +31,6 @@ where
     Err(e) => panic!("Error encrypting data: {}", e),
   };
   Envelope {
-    hash,
     encrypted,
     nonce: BASE64_STANDARD.encode(nonce_bytes),
   }
@@ -61,6 +38,8 @@ where
 
 #[cfg(test)]
 mod encrypt_tests {
+  use std::hash::DefaultHasher;
+
   use aes_gcm_siv::{
     aead::{Aead, KeyInit, Payload},
     Aes256GcmSiv,
@@ -69,7 +48,28 @@ mod encrypt_tests {
   use pretty_assertions::assert_eq;
   use rand::rngs::OsRng;
   use serde::{Deserialize, Serialize};
+  use serde_json::json;
+  use std::hash::{Hash, Hasher};
 
+  fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
+  }
+
+  pub fn generate_hash<T>(data: &T) -> u64
+  where
+    T: Serialize,
+  {
+    let serde_json_val = json!(data);
+
+    let canonicalized = match json_canon::to_string(&serde_json_val) {
+      Ok(canonicalized) => canonicalized,
+      Err(e) => panic!("Error canonicalizing JSON: {}", e),
+    };
+
+    calculate_hash(&canonicalized)
+  }
   #[derive(Serialize, Deserialize, Debug)]
   pub struct DummyLineItem;
 
@@ -94,10 +94,8 @@ mod encrypt_tests {
     };
 
     let bytekey = Aes256GcmSiv::generate_key(&mut OsRng);
-    let registration_hash = super::generate_hash(&data);
+    let registration_hash = generate_hash(&data);
     let envelope = super::encrypt_envelope(&data, &bytekey.to_vec());
-
-    assert_eq!(registration_hash, envelope.hash.unwrap());
 
     let cipher = Aes256GcmSiv::new(&bytekey);
     let decrypted = cipher
@@ -112,7 +110,7 @@ mod encrypt_tests {
       serde_json::from_str::<DummyReceipt>(&canonical_json).expect("Deserialization should work");
     assert_eq!(deserialized.merchant_entity_id, "Amazon".to_string());
 
-    let recalculated_hash = super::calculate_hash(&canonical_json);
+    let recalculated_hash = calculate_hash(&canonical_json);
     assert_eq!(recalculated_hash, registration_hash);
   }
 }
