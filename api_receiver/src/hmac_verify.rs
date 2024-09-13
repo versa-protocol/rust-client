@@ -1,10 +1,5 @@
-use crate::r_protocol::DecryptedPayload;
 use base64::prelude::*;
 use hmac::Mac;
-use http::HeaderMap;
-use protocol::ReceiverPayload;
-use serde_json::Value;
-use tracing::info;
 
 pub async fn verify_with_secret(
   body: axum::body::Body,
