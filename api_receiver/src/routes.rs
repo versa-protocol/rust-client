@@ -62,13 +62,44 @@ pub async fn target(
       })?;
 
   info!("Received keys for sender: {:?}", checkout.sender);
-  let data = crate::decryption::decrypt_envelope::<Value>(envelope, &checkout.key);
+  let data = match crate::decryption::decrypt_envelope::<Value>(envelope, &checkout.key) {
+    Ok(val) => val,
+    Err(misuse_code) => {
+      crate::report_misuse::send(
+        &receiver_client_id,
+        &receiver_client_secret,
+        checkout.receipt_id,
+        misuse_code.clone(),
+      )
+      .await
+      .expect("Reporting misuse failed");
+      return Err((
+        http::StatusCode::BAD_REQUEST,
+        format!("Failed to decrypt envelope: {:?}", misuse_code),
+      ));
+    }
+  };
 
   info!(
     "DATA RECEIVED FROM SENDER_CLIENT_ID={}: {:?}",
     sender_client_id,
     serde_json::to_string(&data).unwrap()
   );
+
+  match crate::schema::validate(&data, &checkout.schema_version).await {
+    Ok(val) => val,
+    Err(misuse_code) => {
+      crate::report_misuse::send(
+        &receiver_client_id,
+        &receiver_client_secret,
+        checkout.receipt_id.clone(),
+        misuse_code.clone(),
+      )
+      .await
+      .expect("Reporting misuse failed");
+      info!("WARN: Failed to validate receipt data: {:?}", misuse_code);
+    }
+  };
 
   let payload = DecryptedPayload {
     sender_client_id,

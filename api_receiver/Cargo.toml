@@ -25,6 +25,8 @@ sha1 = "0.10.6"
 bytes = "1.7.0"
 base64 = "0.22.1"
 versa = "0.3.1"
+jsonschema = "0.22.3"
 
 [dev-dependencies]
 axum-macros = "0.3.8"
+tokio = "1.40.0"

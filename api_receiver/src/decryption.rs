@@ -8,8 +8,11 @@ use base64::prelude::*;
 use serde::Deserialize;
 
 use protocol::model::Envelope;
+use tracing::info;
 
-pub fn decrypt_envelope<T>(envelope: Envelope, key: &String) -> T
+use crate::report_misuse::MisuseCode;
+
+pub fn decrypt_envelope<T>(envelope: Envelope, key: &String) -> Result<T, MisuseCode>
 where
   T: for<'a> Deserialize<'a>,
 {
@@ -19,8 +22,14 @@ where
   let cipher = Aes256GcmSiv::new(key[..].into());
   let decrypted = match cipher.decrypt(nonce[..].into(), Payload::from(&encrypted_data[..])) {
     Ok(decrypted) => decrypted,
-    Err(e) => panic!("Failed to decrypt envelope: {:?}", e),
+    Err(e) => {
+      info!("Failed to decrypt envelope: {:?}", e);
+      return Err(MisuseCode::ProtocolDecryptionFailed);
+    }
   };
   let canonical_json = String::from_utf8(decrypted).expect("Works");
-  serde_json::from_str::<T>(&canonical_json).expect("Deserialization should work")
+  match serde_json::from_str::<T>(&canonical_json) {
+    Ok(data) => Ok(data),
+    Err(_) => Err(MisuseCode::ProtocolDeserializationFailed),
+  }
 }
