@@ -24,7 +24,7 @@ hmac = "0.12.1"
 sha1 = "0.10.6"
 bytes = "1.7.0"
 base64 = "0.22.1"
-versa = { version="0.8.1", features=["client_sender"]}
+versa = { version="0.8.2", features=["client_sender"]}
 jsonschema = "0.22.3"
 
 [dev-dependencies]

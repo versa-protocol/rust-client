@@ -29,7 +29,7 @@ pub async fn send(
 
   let registry_url = std::env::var("REGISTRY_URL").unwrap_or_default();
   let Ok(versa_client) = versa::client::VersaClient::new(registry_url, client_id, client_secret)
-    .sending_client("1.5.0".into())
+    .sending_client("1.5.1".into())
   else {
     return Err((
       http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -40,7 +40,7 @@ pub async fn send(
   // 1. Register with Versa registry
 
   let registration_response = versa_client
-    .register_receipt(payload.handles)
+    .register_receipt(payload.handles, None)
     .await
     .map_err(|e| {
       info!("Registration failed: {:?}", e);
