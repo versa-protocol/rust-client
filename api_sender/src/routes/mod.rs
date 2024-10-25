@@ -2,7 +2,6 @@ use axum::extract::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use versa::{
-  client::customer_registration::CustomerRegistration,
   client_sender::VersaSender,
   protocol::{customer_registration::HandleType, TransactionHandles},
 };
@@ -135,15 +134,13 @@ pub async fn register_customer(Json(payload): Json<SenderCustomerReference>) -> 
     return http::StatusCode::INTERNAL_SERVER_ERROR;
   };
 
-  let customer_reference = versa::protocol::customer_registration::CustomerReference {
+  match protocol::customer_registration::register_customer(
+    versa_client,
     handle,
     handle_type,
-    receiver_client_id: Some(receiver_client_id),
-  };
-
-  match versa_client
-    .register_customer_reference(customer_reference)
-    .await
+    Some(receiver_client_id),
+  )
+  .await
   {
     Ok(_) => http::StatusCode::OK,
     Err(_) => http::StatusCode::SERVICE_UNAVAILABLE,
@@ -166,15 +163,13 @@ pub async fn deregister_customer(Json(payload): Json<SenderCustomerReference>) -
     return http::StatusCode::INTERNAL_SERVER_ERROR;
   };
 
-  let customer_reference = versa::protocol::customer_registration::CustomerReference {
+  match protocol::customer_registration::deregister_customer(
+    versa_client,
     handle,
     handle_type,
-    receiver_client_id: Some(receiver_client_id),
-  };
-
-  match versa_client
-    .deregister_customer_reference(customer_reference)
-    .await
+    Some(receiver_client_id),
+  )
+  .await
   {
     Ok(_) => http::StatusCode::OK,
     Err(_) => http::StatusCode::SERVICE_UNAVAILABLE,

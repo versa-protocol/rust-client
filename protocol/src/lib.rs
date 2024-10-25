@@ -1,6 +1,7 @@
 use base64::prelude::*;
 use serde::{Deserialize, Serialize};
 
+pub mod customer_registration;
 pub mod encryption;
 pub mod hmac_util;
 pub mod model;
