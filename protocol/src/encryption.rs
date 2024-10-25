@@ -6,8 +6,7 @@ use base64::prelude::*;
 use rand::Rng;
 use serde::Serialize;
 use serde_json::json;
-
-use crate::model::Envelope;
+use versa::protocol::Envelope;
 
 fn generate_nonce() -> [u8; 12] {
   let mut rng = rand::thread_rng();

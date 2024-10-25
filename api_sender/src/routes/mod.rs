@@ -1,7 +1,11 @@
 use axum::extract::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use versa::protocol::TransactionHandles;
+use versa::{
+  client::customer_registration::CustomerRegistration,
+  client_sender::VersaSender,
+  protocol::{customer_registration::HandleType, TransactionHandles},
+};
 
 use tracing::info;
 
@@ -24,9 +28,20 @@ pub async fn send(
     ));
   };
 
+  let registry_url = std::env::var("REGISTRY_URL").unwrap_or_default();
+  let Ok(versa_client) = versa::client::VersaClient::new(registry_url, client_id, client_secret)
+    .sending_client("1.5.0".into())
+  else {
+    return Err((
+      http::StatusCode::INTERNAL_SERVER_ERROR,
+      "Failed to create Versa client".to_string(),
+    ));
+  };
+
   // 1. Register with Versa registry
 
-  let registration_response = protocol::register(&client_id, &client_secret, payload.handles)
+  let registration_response = versa_client
+    .register_receipt(payload.handles)
     .await
     .map_err(|e| {
       info!("Registration failed: {:?}", e);
@@ -50,7 +65,7 @@ pub async fn send(
     );
     match protocol::encrypt_and_send(
       &receiver,
-      &client_id,
+      &versa_client.client_id(),
       registration_response.receipt_id.clone(),
       registration_response.encryption_key.clone(),
       &receipt,
@@ -72,7 +87,7 @@ pub struct DryRunResponse {
   pub has_receivers: bool,
 }
 
-pub async fn regcheck(
+pub async fn check_registry(
   Json(payload): Json<SendRequestPayload>,
 ) -> Result<axum::Json<DryRunResponse>, (axum::http::StatusCode, String)> {
   let (client_id, client_secret) = util::get_client_id_and_client_secret();
@@ -95,4 +110,73 @@ pub async fn regcheck(
   let has_receivers = registration_response.receivers.len() > 0;
 
   Ok(axum::Json(DryRunResponse { has_receivers }))
+}
+
+#[derive(Deserialize)]
+pub struct SenderCustomerReference {
+  pub handle: String,
+  pub handle_type: HandleType,
+  pub receiver_client_id: String,
+}
+
+pub async fn register_customer(Json(payload): Json<SenderCustomerReference>) -> http::StatusCode {
+  let (client_id, client_secret) = util::get_client_id_and_client_secret();
+
+  let SenderCustomerReference {
+    handle,
+    handle_type,
+    receiver_client_id,
+  } = payload;
+
+  let registry_url = std::env::var("REGISTRY_URL").unwrap_or_default();
+  let Ok(versa_client) = versa::client::VersaClient::new(registry_url, client_id, client_secret)
+    .sending_client("1.5.0".into())
+  else {
+    return http::StatusCode::INTERNAL_SERVER_ERROR;
+  };
+
+  let customer_reference = versa::protocol::customer_registration::CustomerReference {
+    handle,
+    handle_type,
+    receiver_client_id: Some(receiver_client_id),
+  };
+
+  match versa_client
+    .register_customer_reference(customer_reference)
+    .await
+  {
+    Ok(_) => http::StatusCode::OK,
+    Err(_) => http::StatusCode::SERVICE_UNAVAILABLE,
+  }
+}
+
+pub async fn deregister_customer(Json(payload): Json<SenderCustomerReference>) -> http::StatusCode {
+  let (client_id, client_secret) = util::get_client_id_and_client_secret();
+
+  let SenderCustomerReference {
+    handle,
+    handle_type,
+    receiver_client_id,
+  } = payload;
+
+  let registry_url = std::env::var("REGISTRY_URL").unwrap_or_default();
+  let Ok(versa_client) = versa::client::VersaClient::new(registry_url, client_id, client_secret)
+    .sending_client("1.5.0".into())
+  else {
+    return http::StatusCode::INTERNAL_SERVER_ERROR;
+  };
+
+  let customer_reference = versa::protocol::customer_registration::CustomerReference {
+    handle,
+    handle_type,
+    receiver_client_id: Some(receiver_client_id),
+  };
+
+  match versa_client
+    .deregister_customer_reference(customer_reference)
+    .await
+  {
+    Ok(_) => http::StatusCode::OK,
+    Err(_) => http::StatusCode::SERVICE_UNAVAILABLE,
+  }
 }

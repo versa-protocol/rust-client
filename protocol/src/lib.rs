@@ -5,9 +5,7 @@ pub mod encryption;
 pub mod hmac_util;
 pub mod model;
 
-use model::{Envelope, Receiver};
-
-use versa::protocol::TransactionHandles;
+use versa::protocol::{Receiver, ReceiverPayload, TransactionHandles};
 
 use tracing::info;
 
@@ -144,13 +142,6 @@ pub async fn register(
   }
 
   return Err(());
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct ReceiverPayload {
-  pub sender_client_id: String,
-  pub receipt_id: String,
-  pub envelope: Envelope,
 }
 
 pub async fn encrypt_and_send<T>(

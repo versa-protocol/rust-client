@@ -1,8 +1,8 @@
 use crate::r_protocol::DecryptedPayload;
 use http::HeaderMap;
-use protocol::ReceiverPayload;
 use serde_json::Value;
 use tracing::info;
+use versa::protocol::ReceiverPayload;
 
 pub async fn target(
   headers: HeaderMap,

@@ -23,7 +23,7 @@ hyper = "1.4.1"
 hmac = "0.12.1"
 sha1 = "0.10.6"
 bytes = "1.7.0"
-versa = "0.7.4"
+versa = { version="0.8.1", features=["client_sender"]}
 
 [dev-dependencies]
 axum-macros = "0.3.8"

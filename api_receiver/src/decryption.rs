@@ -7,8 +7,8 @@ use aes_gcm_siv::{
 use base64::prelude::*;
 use serde::Deserialize;
 
-use protocol::model::Envelope;
 use tracing::info;
+use versa::protocol::Envelope;
 
 use crate::report_misuse::MisuseCode;
 
