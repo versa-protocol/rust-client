@@ -1,8 +1,22 @@
-use crate::r_protocol::DecryptedPayload;
 use http::HeaderMap;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::info;
-use versa::protocol::ReceiverPayload;
+use versa::{
+  client_receiver::VersaReceiver,
+  protocol::{ReceiverPayload, Sender, TransactionHandles},
+};
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DecryptedPayload {
+  pub handles: TransactionHandles,
+  pub receipt_id: String,
+  pub receipt: serde_json::Value,
+  pub receiver_client_id: String,
+  pub sender_client_id: String,
+  pub sender: Option<Sender>,
+  pub transaction_id: String,
+}
 
 pub async fn target(
   headers: HeaderMap,
@@ -51,18 +65,18 @@ pub async fn target(
   info!("Received envelope from sender={}", sender_client_id);
   info!("Checking out key for receipt_id={}", receipt_id);
 
-  let checkout =
-    crate::r_protocol::checkout_key(&receiver_client_id, &receiver_client_secret, receipt_id)
-      .await
-      .map_err(|_| {
-        (
-          http::StatusCode::INTERNAL_SERVER_ERROR,
-          "Failed to checkout key".to_string(),
-        )
-      })?;
+  let versa_client =
+    versa::client::VersaClient::new(receiver_client_id.clone(), receiver_client_secret.clone())
+      .receiving_client(receiver_secret);
+  let checkout = versa_client.checkout_key(receipt_id).await.map_err(|_| {
+    (
+      http::StatusCode::INTERNAL_SERVER_ERROR,
+      "Failed to checkout key".to_string(),
+    )
+  })?;
 
   info!("Received keys for sender: {:?}", checkout.sender);
-  let data = match crate::decryption::decrypt_envelope::<Value>(envelope, &checkout.key) {
+  let data = match versa_client.decrypt_envelope::<Value>(envelope, checkout.key) {
     Ok(val) => val,
     Err(misuse_code) => {
       crate::report_misuse::send(

@@ -18,13 +18,12 @@ tower-request-id = "0.3.0"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 reqwest = "0.12.5"
-aes-gcm-siv = "0.11.1"
 hyper = "1.4.1"
 hmac = "0.12.1"
 sha1 = "0.10.6"
 bytes = "1.7.0"
 base64 = "0.22.1"
-versa = { version="0.9.0", features=["client_sender"]}
+versa = { version="0.17.3", features=["client_receiver"]}
 jsonschema = "0.22.3"
 
 [dev-dependencies]

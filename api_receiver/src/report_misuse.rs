@@ -1,24 +1,5 @@
-use serde::Serialize;
 use tracing::info;
-
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum MisuseCode {
-  /// Decrypting the received receipt JSON failed
-  ProtocolDecryptionFailed,
-  /// Decryption succeeded, but the payload was not valid JSON
-  ProtocolDeserializationFailed,
-  /// The schema version provided is invalid, or does not exist
-  SchemaVersionInvalid,
-  /// Schema validation of the receipt based on its provided schema version failed
-  SchemaValidationFailed,
-}
-
-#[derive(Debug, Serialize)]
-pub struct ReportMisuseRequest {
-  pub receipt_id: String,
-  pub misuse_code: MisuseCode,
-}
+use versa::protocol::misuse::{MisuseCode, ReportMisuseRequest};
 
 pub async fn send(
   client_id: &str,

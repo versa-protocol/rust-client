@@ -1,6 +1,5 @@
 use serde_json::Value;
-
-use crate::report_misuse::MisuseCode;
+use versa::protocol::misuse::MisuseCode;
 
 const SCHEMA_URL: &'static str = "https://raw.githubusercontent.com/versa-protocol/schema";
 const SCHEMA_PATH: &'static str = "data/receipt.schema.json";

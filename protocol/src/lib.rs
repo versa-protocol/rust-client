@@ -1,12 +1,10 @@
-use base64::prelude::*;
 use serde::{Deserialize, Serialize};
 
 pub mod customer_registration;
-pub mod encryption;
 pub mod hmac_util;
 pub mod model;
 
-use versa::protocol::{Receiver, ReceiverPayload, TransactionHandles};
+use versa::protocol::{Receiver, TransactionHandles};
 
 use tracing::info;
 
@@ -45,7 +43,7 @@ pub struct DryRunReceiversResponse {
   pub receivers: Vec<DryRunReceiver>,
 }
 
-pub async fn dryrun(
+pub async fn check_registry(
   client_id: &str,
   client_secret: &str,
   handles: TransactionHandles,
@@ -55,8 +53,8 @@ pub async fn dryrun(
 
   let payload_json = serde_json::to_string(&handles).unwrap();
 
-  let url = format!("{}/regcheck", registry_url);
-  info!("Sending dryrun registration request to: {}", url);
+  let url = format!("{}/check_registry", registry_url);
+  info!("Sending check_registry registration request to: {}", url);
   let client = reqwest::Client::new();
   let response_result = client
     .post(url)
@@ -88,112 +86,6 @@ pub async fn dryrun(
   } else {
     info!("Received error status from registry: {}", res.status());
   }
-
-  return Err(());
-}
-
-pub async fn register(
-  client_id: &str,
-  client_secret: &str,
-  handles: TransactionHandles,
-) -> Result<ReceiptRegistrationResponse, ()> {
-  let registry_url = std::env::var("REGISTRY_URL").unwrap_or_default();
-  let credential = format!("Basic {}:{}", client_id, client_secret);
-
-  let payload = ReceiptRegistrationRequest {
-    schema_version: "1.2.0".into(),
-    handles,
-    transaction_id: None,
-  };
-
-  let payload_json = serde_json::to_string(&payload).unwrap();
-
-  let url = format!("{}/register", registry_url);
-  info!("Sending registration request to: {}", url);
-  let client = reqwest::Client::new();
-  let response_result = client
-    .post(url)
-    .header("Accept", "application/json")
-    .header("Authorization", credential)
-    .header("Content-Type", "application/json")
-    .body(payload_json)
-    .send()
-    .await;
-
-  let res = match response_result {
-    Ok(res) => res,
-    Err(e) => {
-      info!("Error placing request: {:?}", e);
-      return Err(());
-    }
-  };
-  info!("Registration response received");
-
-  if res.status().is_success() {
-    let data: ReceiptRegistrationResponse = match res.json().await {
-      Ok(val) => val,
-      Err(e) => {
-        info!("Failed to deserialize due to error: {}", e);
-        return Err(());
-      }
-    };
-    return Ok(data);
-  } else {
-    info!("Received error status from registry: {}", res.status());
-  }
-
-  return Err(());
-}
-
-pub async fn encrypt_and_send<T>(
-  receiver: &Receiver,
-  client_id: &str,
-  receipt_id: String,
-  encryption_key: String,
-  data: T,
-) -> Result<(), ()>
-where
-  T: Serialize,
-{
-  let envelope =
-    encryption::encrypt_envelope(&data, &BASE64_STANDARD.decode(encryption_key).unwrap());
-
-  let payload = ReceiverPayload {
-    sender_client_id: client_id.to_string(),
-    receipt_id,
-    envelope,
-  };
-
-  let payload_json = serde_json::to_string(&payload).unwrap();
-  let byte_body = bytes::Bytes::from(payload_json.clone());
-  let token = hmac_util::generate_token(byte_body, receiver.secret.clone()).await;
-  let client = reqwest::Client::new();
-  let response_result = client
-    .post(&receiver.address)
-    .header("Content-Type", "application/json")
-    .header("X-Request-Signature", token)
-    .body(payload_json)
-    .send()
-    .await;
-
-  let res = match response_result {
-    Ok(res) => res,
-    Err(e) => {
-      info!("Error placing request: {:?}", e);
-      return Err(());
-    }
-  };
-
-  if res.status().is_success() {
-    info!("Successfully sent data to receiver: {}", receiver.address);
-    // TODO: process response from each receiver
-    return Ok(());
-  } else {
-    let status = res.status();
-    let text = res.text().await.unwrap_or_default();
-    info!("Received an error from the receiver: {} {}", status, text);
-  }
-  // info!("Received an error from the receiver: {:?}", res);
 
   return Err(());
 }

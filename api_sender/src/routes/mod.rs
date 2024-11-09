@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use versa::{
   client_sender::VersaSender,
-  protocol::{customer_registration::HandleType, TransactionHandles},
+  protocol::{customer_registration::HandleType, ReceiptRegistrationResponse, TransactionHandles},
 };
 
 use tracing::info;
@@ -27,15 +27,8 @@ pub async fn send(
     ));
   };
 
-  let registry_url = std::env::var("REGISTRY_URL").unwrap_or_default();
-  let Ok(versa_client) = versa::client::VersaClient::new(registry_url, client_id, client_secret)
-    .sending_client("1.5.1".into())
-  else {
-    return Err((
-      http::StatusCode::INTERNAL_SERVER_ERROR,
-      "Failed to create Versa client".to_string(),
-    ));
-  };
+  let versa_client =
+    versa::client::VersaClient::new(client_id, client_secret).sending_client("1.7.0".into());
 
   // 1. Register with Versa registry
 
@@ -55,21 +48,29 @@ pub async fn send(
     registration_response.receivers.len()
   );
 
+  let ReceiptRegistrationResponse {
+    env: _env,
+    receipt_id,
+    transaction_id: _transaction_id,
+    receivers,
+    encryption_key,
+  } = registration_response;
+
   // 2 and 3. Encrypt and send to each receiver
 
-  for receiver in registration_response.receivers {
+  for receiver in receivers {
     info!(
       "Encrypting and sending envelope to receiver {} at {}",
       receiver.org_id, receiver.address
     );
-    match protocol::encrypt_and_send(
-      &receiver,
-      &versa_client.client_id(),
-      registration_response.receipt_id.clone(),
-      registration_response.encryption_key.clone(),
-      &receipt,
-    )
-    .await
+    match versa_client
+      .encrypt_and_send(
+        &receiver,
+        receipt_id.clone(),
+        encryption_key.clone(),
+        &receipt,
+      )
+      .await
     {
       Ok(_) => info!("Successfully sent to receiver: {}", receiver.address),
       Err(e) => {
@@ -91,7 +92,7 @@ pub async fn check_registry(
 ) -> Result<axum::Json<DryRunResponse>, (axum::http::StatusCode, String)> {
   let (client_id, client_secret) = util::get_client_id_and_client_secret();
 
-  let registration_response = protocol::dryrun(&client_id, &client_secret, payload.handles)
+  let registration_response = protocol::check_registry(&client_id, &client_secret, payload.handles)
     .await
     .map_err(|e| {
       info!("Registration dryrun failed: {:?}", e);
@@ -127,12 +128,8 @@ pub async fn register_customer(Json(payload): Json<SenderCustomerReference>) -> 
     receiver_client_id,
   } = payload;
 
-  let registry_url = std::env::var("REGISTRY_URL").unwrap_or_default();
-  let Ok(versa_client) = versa::client::VersaClient::new(registry_url, client_id, client_secret)
-    .sending_client("1.5.0".into())
-  else {
-    return http::StatusCode::INTERNAL_SERVER_ERROR;
-  };
+  let versa_client =
+    versa::client::VersaClient::new(client_id, client_secret).sending_client("1.5.0".into());
 
   match protocol::customer_registration::register_customer(
     versa_client,
@@ -156,12 +153,8 @@ pub async fn deregister_customer(Json(payload): Json<SenderCustomerReference>) -
     receiver_client_id,
   } = payload;
 
-  let registry_url = std::env::var("REGISTRY_URL").unwrap_or_default();
-  let Ok(versa_client) = versa::client::VersaClient::new(registry_url, client_id, client_secret)
-    .sending_client("1.5.0".into())
-  else {
-    return http::StatusCode::INTERNAL_SERVER_ERROR;
-  };
+  let versa_client =
+    versa::client::VersaClient::new(client_id, client_secret).sending_client("1.5.0".into());
 
   match protocol::customer_registration::deregister_customer(
     versa_client,
