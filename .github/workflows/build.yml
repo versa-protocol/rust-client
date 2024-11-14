@@ -7,7 +7,7 @@ on:
 
 jobs:
   docker-build-sender:
-    name: Build and Push
+    name: Build and Push Sender
     runs-on: ubuntu-latest
     steps:
       - name: Docker Meta
@@ -49,7 +49,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
   docker-build-receiver:
-    name: Build and Push
+    name: Build and Push Receiver
     runs-on: ubuntu-latest
     steps:
       - name: Docker Meta
