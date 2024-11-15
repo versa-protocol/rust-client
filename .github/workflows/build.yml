@@ -16,7 +16,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            versaprotocol/client-sender
+            versa/client-sender
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
@@ -58,7 +58,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            versaprotocol/client-receiver
+            versa/client-receiver
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
