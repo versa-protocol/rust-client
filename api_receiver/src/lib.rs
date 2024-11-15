@@ -1,4 +1,4 @@
-use axum::routing::post;
+use axum::routing::{delete, post};
 use axum::Router;
 
 pub mod routes;
@@ -11,5 +11,8 @@ mod report_misuse; // move to SDK
 mod schema; // move to SDK
 
 pub fn configure() -> Router {
-  Router::new().route("/target", post(routes::target))
+  Router::new()
+    .route("/customer", delete(routes::deregister_customer))
+    .route("/customer", post(routes::register_customer))
+    .route("/target", post(routes::target))
 }

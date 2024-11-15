@@ -5,8 +5,8 @@ pub mod routes;
 
 pub fn configure() -> Router {
   Router::new()
-    .route("/handle", delete(routes::deregister_customer))
-    .route("/handle", post(routes::register_customer))
+    .route("/customer", delete(routes::deregister_customer))
+    .route("/customer", post(routes::register_customer))
     .route("/check_registry", post(routes::check_registry))
     .route("/send", post(routes::send))
 }

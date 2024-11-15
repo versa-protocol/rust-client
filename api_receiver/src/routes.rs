@@ -4,7 +4,7 @@ use serde_json::Value;
 use tracing::info;
 use versa::{
   client_receiver::VersaReceiver,
-  protocol::{ReceiverPayload, Sender, TransactionHandles},
+  protocol::{customer_registration::HandleType, ReceiverPayload, Sender, TransactionHandles},
 };
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -137,4 +137,59 @@ pub async fn target(
   );
 
   Ok(http::StatusCode::OK)
+}
+
+#[derive(Deserialize)]
+pub struct ReceiverCustomerReference {
+  pub handle: String,
+  pub handle_type: HandleType,
+}
+
+pub async fn register_customer(
+  axum::extract::Json(payload): axum::extract::Json<ReceiverCustomerReference>,
+) -> http::StatusCode {
+  let (client_id, client_secret) = util::get_client_id_and_client_secret();
+  let receiver_secret = crate::r_config::get_receiver_secret();
+
+  let ReceiverCustomerReference {
+    handle,
+    handle_type,
+  } = payload;
+
+  let versa_client =
+    versa::client::VersaClient::new(client_id, client_secret).receiving_client(receiver_secret);
+
+  match protocol::customer_registration::register_customer(versa_client, handle, handle_type, None)
+    .await
+  {
+    Ok(_) => http::StatusCode::OK,
+    Err(_) => http::StatusCode::SERVICE_UNAVAILABLE,
+  }
+}
+
+pub async fn deregister_customer(
+  axum::extract::Json(payload): axum::extract::Json<ReceiverCustomerReference>,
+) -> http::StatusCode {
+  let (client_id, client_secret) = util::get_client_id_and_client_secret();
+  let receiver_secret = crate::r_config::get_receiver_secret();
+
+  let ReceiverCustomerReference {
+    handle,
+    handle_type,
+  } = payload;
+
+  let versa_client =
+    versa::client::VersaClient::new(client_id, client_secret).receiving_client(receiver_secret);
+
+  match protocol::customer_registration::deregister_customer(
+    versa_client,
+    handle,
+    handle_type,
+    None,
+  )
+  .await
+  {
+    Ok(_) => http::StatusCode::OK,
+    Err(_) => http::StatusCode::SERVICE_UNAVAILABLE,
+  }
 }
