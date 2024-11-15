@@ -14,6 +14,8 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
+          flavor: |
+            latest=auto
           # list of Docker images to use as base name for tags
           images: |
             versa/client-sender
@@ -56,6 +58,8 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
+          flavor: |
+            latest=auto
           # list of Docker images to use as base name for tags
           images: |
             versa/client-receiver
