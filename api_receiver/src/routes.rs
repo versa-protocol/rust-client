@@ -116,25 +116,41 @@ pub async fn target(
   };
 
   let payload = DecryptedPayload {
-    sender_client_id,
-    receipt_id: checkout.receipt_id,
-    transaction_id: checkout.transaction_id,
-    receiver_client_id,
     handles: checkout.handles,
-    sender: checkout.sender,
+    receipt_id: checkout.receipt_id,
     receipt: data,
+    receiver_client_id,
+    sender_client_id,
+    sender: checkout.sender,
+    transaction_id: checkout.transaction_id,
   };
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  //
-  // TODO: Logic to handle the decrypted payload, whether storing or forwarding it to another service
-  //
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   info!(
     "Successfully received data over the Versa network: {:?}",
     payload
   );
+
+  match std::env::var("LOCAL_TARGET_URL") {
+    Ok(url) => {
+      // send to url
+      let client = reqwest::Client::new();
+      let res = client.post(url).json(&payload).send().await.map_err(|e| {
+        (
+          http::StatusCode::INTERNAL_SERVER_ERROR,
+          format!("Failed to send data to local target: {:?}", e),
+        )
+      })?;
+
+      if res.status().is_success() {
+        info!("Successfully sent data to local target");
+      } else {
+        info!("Failed to send data to local target: {:?}", res);
+      }
+    }
+    Err(_) => {
+      info!("WARN: LOCAL_TARGET_URL not set, data not sent to local endpoint");
+    }
+  }
 
   Ok(http::StatusCode::OK)
 }
