@@ -9,6 +9,6 @@ pub fn get_client_string() -> String {
   format!(
     "rust-client-official/{}/{}",
     env!("CARGO_PKG_VERSION").to_string(),
-    std::env::var("IMAGE_DIGEST").unwrap_or("".into())
+    std::env::var("IMAGE_VERSION").unwrap_or("".into())
   )
 }
