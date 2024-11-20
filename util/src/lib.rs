@@ -4,3 +4,11 @@ pub fn get_client_id_and_client_secret() -> (String, String) {
     std::env::var("VERSA_CLIENT_SECRET").expect("VERSA_CLIENT_SECRET must be set");
   (client_id, client_secret)
 }
+
+pub fn get_client_string() -> String {
+  format!(
+    "rust-client-official/{}/{}",
+    env!("CARGO_PKG_VERSION").to_string(),
+    std::env::var("IMAGE_DIGEST").unwrap_or("".into())
+  )
+}

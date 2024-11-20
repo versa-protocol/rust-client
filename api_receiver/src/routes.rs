@@ -68,6 +68,7 @@ pub async fn target(
 
   let versa_client =
     versa::client::VersaClient::new(receiver_client_id.clone(), receiver_client_secret.clone())
+      .with_client_string(&util::get_client_string())
       .receiving_client(receiver_secret);
   let checkout = versa_client.checkout_key(receipt_id).await.map_err(|_| {
     (
@@ -174,8 +175,9 @@ pub async fn register_customer(
     handle_type,
   } = payload;
 
-  let versa_client =
-    versa::client::VersaClient::new(client_id, client_secret).receiving_client(receiver_secret);
+  let versa_client = versa::client::VersaClient::new(client_id, client_secret)
+    .with_client_string(&util::get_client_string())
+    .receiving_client(receiver_secret);
 
   match protocol::customer_registration::register_customer(versa_client, handle, handle_type, None)
     .await
@@ -196,8 +198,9 @@ pub async fn deregister_customer(
     handle_type,
   } = payload;
 
-  let versa_client =
-    versa::client::VersaClient::new(client_id, client_secret).receiving_client(receiver_secret);
+  let versa_client = versa::client::VersaClient::new(client_id, client_secret)
+    .with_client_string(&util::get_client_string())
+    .receiving_client(receiver_secret);
 
   match protocol::customer_registration::deregister_customer(
     versa_client,

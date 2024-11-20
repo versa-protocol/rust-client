@@ -27,8 +27,9 @@ pub async fn send(
     ));
   };
 
-  let versa_client =
-    versa::client::VersaClient::new(client_id, client_secret).sending_client("1.7.0".into());
+  let versa_client = versa::client::VersaClient::new(client_id, client_secret)
+    .with_client_string(&util::get_client_string())
+    .sending_client(payload.schema_version);
 
   // 1. Register with Versa registry
 
@@ -128,8 +129,9 @@ pub async fn register_customer(Json(payload): Json<SenderCustomerReference>) -> 
     receiver_client_id,
   } = payload;
 
-  let versa_client =
-    versa::client::VersaClient::new(client_id, client_secret).sending_client("1.5.0".into());
+  let versa_client = versa::client::VersaClient::new(client_id, client_secret)
+    .with_client_string(&util::get_client_string())
+    .sending_client("1.8.0".into());
 
   match protocol::customer_registration::register_customer(
     versa_client,
@@ -153,8 +155,9 @@ pub async fn deregister_customer(Json(payload): Json<SenderCustomerReference>) -
     receiver_client_id,
   } = payload;
 
-  let versa_client =
-    versa::client::VersaClient::new(client_id, client_secret).sending_client("1.5.0".into());
+  let versa_client = versa::client::VersaClient::new(client_id, client_secret)
+    .with_client_string(&util::get_client_string())
+    .sending_client("1.8.0".into());
 
   match protocol::customer_registration::deregister_customer(
     versa_client,

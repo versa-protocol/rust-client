@@ -16,6 +16,7 @@ RUN cargo install --path service --no-default-features --features $features
 
 FROM debian:bookworm-slim as runner
 COPY --from=builder /usr/local/cargo/bin/rust-client /usr/local/bin/rust-client
+ENV IMAGE_VERSION="$IMAGE_DIGEST"
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates
 RUN update-ca-certificates
