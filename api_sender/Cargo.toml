@@ -8,8 +8,7 @@ edition = "2018"
 [dependencies]
 protocol = { path = "../protocol" }
 util = { path = "../util" }
-axum = { version = "0.7.5", features = [ "json", "query", "macros", "multipart" ] }
-chrono = { version = "0.4.24", features = ["serde"] }
+axum = { version = "0.8.1", features = [ "json", "query", "macros", "multipart" ] }
 http = "1.0.0"
 serde = "1.0"
 serde_json = "1.0"
@@ -22,7 +21,7 @@ hyper = "1.4.1"
 hmac = "0.12.1"
 sha1 = "0.10.6"
 bytes = "1.7.0"
-versa = { version="0.18.0", features=["client_sender"]}
+versa = { version="0.25.1", features=["client_sender"]}
 
 [dev-dependencies]
 axum-macros = "0.3.8"

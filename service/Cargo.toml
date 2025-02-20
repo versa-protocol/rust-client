@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 api_receiver = { path = "../api_receiver", optional = true }
 api_sender = { path = "../api_sender", optional = true }
-axum = { version = "0.7.5", features = [ "json" ] }
+axum = { version = "0.8.1", features = [ "json" ] }
 dotenv = "0.15.0"
 http = "1.1.0"
 hyper = "0.14.28"

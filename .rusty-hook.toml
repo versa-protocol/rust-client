@@ -1,5 +1,5 @@
 [hooks]
-pre-commit = "bash fmt_on_commit.sh && cargo test"
+pre-commit = "bash fmt_on_commit.sh && cargo test && cargo check --features receiver && cargo check --features sender"
 
 [logging]
 verbose = true

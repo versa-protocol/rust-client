@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use versa::{
   client_sender::VersaSender,
-  protocol::{customer_registration::HandleType, ReceiptRegistrationResponse, TransactionHandles},
+  protocol::{customer_registration::HandleType, TransactionHandles},
 };
 
 use tracing::info;
@@ -49,13 +49,7 @@ pub async fn send(
     registration_response.receivers.len()
   );
 
-  let ReceiptRegistrationResponse {
-    env: _env,
-    receipt_id,
-    transaction_id: _transaction_id,
-    receivers,
-    encryption_key,
-  } = registration_response;
+  let (encryption_key, summary, receivers) = registration_response.ready_for_delivery();
 
   // 2 and 3. Encrypt and send to each receiver
 
@@ -65,12 +59,7 @@ pub async fn send(
       receiver.org_id, receiver.address
     );
     match versa_client
-      .encrypt_and_send(
-        &receiver,
-        receipt_id.clone(),
-        encryption_key.clone(),
-        &receipt,
-      )
+      .encrypt_and_send(&receiver, summary.clone(), encryption_key.clone(), &receipt)
       .await
     {
       Ok(_) => info!("Successfully sent to receiver: {}", receiver.address),
