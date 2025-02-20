@@ -4,7 +4,10 @@ use serde_json::Value;
 use tracing::info;
 use versa::{
   client_receiver::VersaReceiver,
-  protocol::{customer_registration::HandleType, ReceiverPayload, Sender, TransactionHandles},
+  protocol::{
+    customer_registration::HandleType, ReceiverPayload, Sender, TransactionHandles, WebhookEvent,
+    WebhookEventType,
+  },
 };
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -47,7 +50,7 @@ pub async fn target(
     ));
   }
   info!("Successfully verified hmac request signature");
-  let body: ReceiverPayload = match serde_json::from_slice(&body_bytes) {
+  let body: WebhookEvent<ReceiverPayload> = match serde_json::from_slice(&body_bytes) {
     Ok(val) => val,
     Err(e) => {
       return Err((
@@ -57,11 +60,16 @@ pub async fn target(
     }
   };
 
+  let event = body.event;
+  if event != WebhookEventType::Receipt {
+    info!("WARN: Received event other than 'receipt': {}", event);
+  }
+
   let ReceiverPayload {
     sender_client_id,
     receipt_id,
     envelope,
-  } = body;
+  } = body.data;
 
   info!("Received envelope from sender={}", sender_client_id);
   info!("Checking out key for receipt_id={}", receipt_id);
