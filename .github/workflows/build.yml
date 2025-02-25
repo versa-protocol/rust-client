@@ -45,6 +45,7 @@ jobs:
         with:
           build-args: |
             features=sender
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
@@ -88,6 +89,7 @@ jobs:
         with:
           build-args: |
             features=receiver
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
