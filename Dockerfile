@@ -14,7 +14,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo install --path service --no-default-features --features $features
 
-FROM debian:bookworm-slim as runner
+FROM debian:bookworm-slim AS runner
 COPY --from=builder /usr/local/cargo/bin/rust-client /usr/local/bin/rust-client
 ENV IMAGE_VERSION="$IMAGE_DIGEST"
 RUN apt-get update \

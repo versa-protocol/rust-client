@@ -13,11 +13,18 @@ pub struct SendRequestPayload {
   pub receipt: Option<Value>,
   pub schema_version: String,
   pub handles: TransactionHandles,
+  pub transaction_id: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct SendReceiptResponse {
+  pub receipt_id: String,
+  pub transaction_id: String,
 }
 
 pub async fn send(
   Json(payload): Json<SendRequestPayload>,
-) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
+) -> Result<axum::Json<SendReceiptResponse>, (axum::http::StatusCode, String)> {
   let (client_id, client_secret) = util::get_client_id_and_client_secret();
 
   let Some(receipt) = payload.receipt else {
@@ -34,7 +41,7 @@ pub async fn send(
   // 1. Register with Versa registry
 
   let registration_response = versa_client
-    .register_receipt(payload.handles, None)
+    .register_receipt(payload.handles, payload.transaction_id)
     .await
     .map_err(|e| {
       info!("Registration failed: {:?}", e);
@@ -69,7 +76,13 @@ pub async fn send(
     }
   }
 
-  Ok(http::StatusCode::OK)
+  let receipt_id = summary.receipt_id;
+  let transaction_id = summary.transaction_id;
+
+  Ok(axum::Json(SendReceiptResponse {
+    receipt_id,
+    transaction_id,
+  }))
 }
 
 #[derive(Serialize)]
