@@ -65,11 +65,12 @@ pub async fn send(
       "Encrypting and sending envelope to receiver {} at {}",
       receiver.org_id, receiver.address
     );
+    let endpoint_url = receiver.address.clone();
     match versa_client
-      .encrypt_and_send(&receiver, summary.clone(), encryption_key.clone(), &receipt)
+      .encrypt_and_send(receiver, summary.clone(), encryption_key.clone(), &receipt)
       .await
     {
-      Ok(_) => info!("Successfully sent to receiver: {}", receiver.address),
+      Ok(_) => info!("Successfully sent to receiver: {}", endpoint_url),
       Err(e) => {
         info!("Failed to send to receiver: {:?}", e)
       }
