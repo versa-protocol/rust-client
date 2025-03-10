@@ -27,7 +27,7 @@ pub async fn target(
   raw_body: axum::body::Body,
 ) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
   let (receiver_client_id, receiver_client_secret) = util::get_client_id_and_client_secret();
-  let receiver_secret = crate::r_config::get_receiver_secret();
+  let receiver_secret = crate::r_config::get_webhook_secret();
 
   let Some(request_signature) = headers.get("X-Request-Signature") else {
     return Err((
@@ -176,7 +176,7 @@ pub async fn register_customer(
   axum::extract::Json(payload): axum::extract::Json<ReceiverCustomerReference>,
 ) -> http::StatusCode {
   let (client_id, client_secret) = util::get_client_id_and_client_secret();
-  let receiver_secret = crate::r_config::get_receiver_secret();
+  let receiver_secret = crate::r_config::get_webhook_secret();
 
   let ReceiverCustomerReference {
     handle,
@@ -199,7 +199,7 @@ pub async fn deregister_customer(
   axum::extract::Json(payload): axum::extract::Json<ReceiverCustomerReference>,
 ) -> http::StatusCode {
   let (client_id, client_secret) = util::get_client_id_and_client_secret();
-  let receiver_secret = crate::r_config::get_receiver_secret();
+  let receiver_secret = crate::r_config::get_webhook_secret();
 
   let ReceiverCustomerReference {
     handle,
