@@ -23,7 +23,7 @@ sha1 = "0.10.6"
 bytes = "1.7.0"
 base64 = "0.22.1"
 versa = { version="0.27.0", features=["client_receiver"]}
-jsonschema = "0.22.3"
+jsonschema = "0.29.0"
 
 [dev-dependencies]
 axum-macros = "0.3.8"

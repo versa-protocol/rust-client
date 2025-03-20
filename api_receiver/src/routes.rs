@@ -61,8 +61,11 @@ pub async fn target(
   };
 
   let event = body.event;
-  if event != WebhookEventType::Receipt {
-    info!("WARN: Received event other than 'receipt': {}", event);
+  if event != WebhookEventType::Receipt && event != WebhookEventType::Itinerary {
+    info!(
+      "WARN: Received event other than 'receipt' or 'itinerary': {}",
+      event
+    );
   }
 
   let ReceiverPayload {
@@ -110,9 +113,10 @@ pub async fn target(
     serde_json::to_string(&data).unwrap()
   );
 
-  match crate::schema::validate(&data, &checkout.schema_version).await {
+  match crate::schema::validate(&event, &data).await {
     Ok(val) => val,
-    Err(misuse_code) => {
+    Err((misuse_code, msg)) => {
+      info!("WARN: Schema validation failed: {}", msg);
       crate::report_misuse::send(
         &receiver_client_id,
         &receiver_client_secret,
