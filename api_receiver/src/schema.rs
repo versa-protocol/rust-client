@@ -1,62 +1,9 @@
 use serde_json::Value;
 use versa::protocol::{misuse::MisuseCode, WebhookEventType};
 
-const SCHEMA_URL: &'static str = "https://raw.githubusercontent.com/versa-protocol/schema";
-
 pub async fn validate(event: &WebhookEventType, data: &Value) -> Result<(), (MisuseCode, String)> {
-  let schema_version = match data.get("schema_version") {
-    Some(val) => match val.as_str() {
-      Some(version) => version,
-      None => {
-        return Err((
-          MisuseCode::SchemaVersionInvalid,
-          format!("Invalid schema_version: {}", val),
-        ))
-      }
-    },
-    None => {
-      return Err((
-        MisuseCode::SchemaValidationFailed,
-        "Missing schema_version".to_string(),
-      ))
-    }
-  };
-  let schema_url = format!(
-    "{}/{}/data/{}.schema.json",
-    SCHEMA_URL,
-    schema_version,
-    event.to_string()
-  );
-
-  // get schema from URL using reqwest and turn into serde Value
-  let schema: Value = match match reqwest::get(&schema_url).await {
-    Ok(res) => res,
-    Err(_) => {
-      return Err((
-        MisuseCode::SchemaVersionInvalid,
-        format!("Invalid schema_version: {}", schema_version),
-      ))
-    }
-  }
-  .json()
-  .await
-  {
-    Ok(val) => val,
-    Err(_) => {
-      return Err((
-        MisuseCode::SchemaVersionInvalid,
-        format!("Invalid schema_version: {}", schema_version),
-      ))
-    }
-  };
-
-  match jsonschema::validate(&schema, data) {
-    Ok(_) => Ok(()),
-    Err(e) => {
-      let error_message = format!("Schema validation failed: {}", e);
-      Err((MisuseCode::SchemaValidationFailed, error_message))
-    }
-  }
+  let validator = versa::schema::validator::Validator::new().allow_remote_lookup(true);
+  validator.validate(event, data).await
 }
 
 #[cfg(test)]
@@ -64,7 +11,149 @@ mod tests {
   use super::*;
 
   #[tokio::test]
-  async fn test_validation_should_succeed() {
+  async fn test_validation_of_latest_schema_version_should_succeed() {
+    let data = serde_json::json!({
+      "schema_version": "1.10.0",
+      "header": {
+        "invoice_number": "1MzFN1K8F4fqH0lBmFq8CjbU",
+        "currency": "usd",
+        "total": 140040,
+        "subtotal": 121862,
+        "paid": 140040,
+        "invoiced_at": 1713295619,
+        "mcc": null,
+        "third_party": null,
+        "customer": null,
+        "location": null,
+        "receipt_asset_id": null,
+        "invoice_asset_id": null
+      },
+      "itemization": {
+        "general": null,
+        "lodging": null,
+        "ecommerce": null,
+        "car_rental": null,
+        "transit_route": null,
+        "subscription": null,
+        "flight": {
+          "tickets": [
+            {
+              "taxes": [],
+              "segments": [
+                {
+                  "fare": 12186,
+                  "departure_airport_code": "MSP",
+                  "arrival_airport_code": "GFK",
+                  "aircraft_type": "B39M",
+                  "departure_at": 1713206492,
+                  "arrival_at": 1713226492,
+                  "departure_tz": "America/Chicago",
+                  "arrival_tz": "America/Chicago",
+                  "flight_number": "DL4656",
+                  "class_of_service": "k",
+                  "seat": "10A",
+                  "taxes": [
+                    {
+                      "amount": 914,
+                      "rate": 0.075,
+                      "name": "US Transportation Tax"
+                    },
+                    {
+                      "amount": 224,
+                      "rate": null,
+                      "name": "US September 11th Security Fee"
+                    },
+                    {
+                      "amount": 360,
+                      "rate": null,
+                      "name": "US Passenger Facility Charge"
+                    },
+                    {
+                      "amount": 400,
+                      "rate": null,
+                      "name": "US Flight Segment Tax"
+                    }
+                  ],
+                  "adjustments": [],
+                  "metadata": []
+                },
+              ],
+              "number": "0062698215636",
+              "record_locator": "CU9GEF",
+              "passenger": "Susy Smith",
+              "metadata": [{ "key": "AAdvantage #", "value": "TH4700" }]
+            },
+            {
+              "taxes": [],
+              "segments": [
+                {
+                  "fare": 12186,
+                  "departure_airport_code": "MSP",
+                  "arrival_airport_code": "GFK",
+                  "aircraft_type": "B39M",
+                  "departure_at": 1713206492,
+                  "arrival_at": 1713226492,
+                  "departure_tz": "America/Chicago",
+                  "arrival_tz": "America/Chicago",
+                  "flight_number": "DL4656",
+                  "class_of_service": "k",
+                  "seat": "11A",
+                  "taxes": [
+                    {
+                      "amount": 914,
+                      "rate": 0.075,
+                      "name": "US Transportation Tax"
+                    },
+                    {
+                      "amount": 224,
+                      "rate": null,
+                      "name": "US September 11th Security Fee"
+                    },
+                    {
+                      "amount": 360,
+                      "rate": null,
+                      "name": "US Passenger Facility Charge"
+                    },
+                    {
+                      "amount": 400,
+                      "rate": null,
+                      "name": "US Flight Segment Tax"
+                    }
+                  ],
+                  "adjustments": [],
+                  "metadata": []
+                },
+              ],
+              "number": "0062698215637",
+              "record_locator": "CU9GEF",
+              "passenger": "John Smith",
+              "metadata": [{ "key": "AAdvantage #", "value": "TH4703" }]
+            }
+          ],
+          "itinerary_locator": "1122337694093",
+          "invoice_level_adjustments": []
+        }
+      },
+      "footer": {
+        "actions": [],
+        "supplemental_text": "You have 24 hours from the time you first buy your ticket to make changes or cancel for a refund if you booked at least 2 days before departure."
+      },
+      "payments": [
+        {
+          "amount": 140040,
+          "paid_at": 1713295619,
+          "payment_type": "card",
+          "card_payment": { "last_four": "4886", "network": "mastercard" },
+          "ach_payment": null
+        }
+      ]
+    });
+
+    assert!(validate(&WebhookEventType::Receipt, &data).await.is_ok());
+  }
+
+  #[tokio::test]
+  async fn test_validation_of_outdated_receipt_should_succeed() {
     let data = serde_json::json!({
       "schema_version": "1.4.0",
       "header": {

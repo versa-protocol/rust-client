@@ -7,7 +7,7 @@ pub async fn register_customer<T>(
   versa_client: T,
   handle: String,
   handle_type: HandleType,
-  receiver_client_id: Option<String>,
+  receiver_org_id: Option<String>,
 ) -> Result<(), ClientError>
 where
   T: CustomerRegistration,
@@ -15,7 +15,8 @@ where
   let customer_reference = CustomerReference {
     handle,
     handle_type,
-    receiver_client_id,
+    receiver_client_id: None,
+    receiver_org_id,
   };
 
   versa_client
@@ -27,7 +28,7 @@ pub async fn deregister_customer<T>(
   versa_client: T,
   handle: String,
   handle_type: HandleType,
-  receiver_client_id: Option<String>,
+  receiver_org_id: Option<String>,
 ) -> Result<(), ClientError>
 where
   T: CustomerRegistration,
@@ -35,7 +36,8 @@ where
   let customer_reference = CustomerReference {
     handle,
     handle_type,
-    receiver_client_id,
+    receiver_client_id: None,
+    receiver_org_id,
   };
 
   versa_client
