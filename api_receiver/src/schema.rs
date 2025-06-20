@@ -1,14 +1,16 @@
 use serde_json::Value;
-use versa::protocol::{misuse::MisuseCode, WebhookEventType};
+use versa::protocol::{misuse::MisuseCode, webhook::TransactionEvent};
 
-pub async fn validate(event: &WebhookEventType, data: &Value) -> Result<(), (MisuseCode, String)> {
+pub async fn validate(event: &TransactionEvent, data: &Value) -> Result<(), (MisuseCode, String)> {
   let validator = versa::schema::validator::Validator::new().allow_remote_lookup(true);
   validator.validate(event, data).await
 }
 
 #[cfg(test)]
 mod tests {
+
   use super::*;
+  use pretty_assertions::assert_eq;
 
   #[tokio::test]
   async fn test_validation_of_latest_schema_version_should_succeed() {
@@ -149,7 +151,7 @@ mod tests {
       ]
     });
 
-    assert!(validate(&WebhookEventType::Receipt, &data).await.is_ok());
+    assert!(validate(&TransactionEvent::Receipt, &data).await.is_ok());
   }
 
   #[tokio::test]
@@ -206,7 +208,7 @@ mod tests {
       "payments": []
     });
 
-    assert!(validate(&WebhookEventType::Receipt, &data).await.is_ok());
+    assert!(validate(&TransactionEvent::Receipt, &data).await.is_ok());
   }
 
   #[tokio::test]
@@ -234,14 +236,11 @@ mod tests {
       },
     });
 
-    let Err((code, msg)) = validate(&WebhookEventType::Receipt, &data).await else {
+    let Err((code, msg)) = validate(&TransactionEvent::Receipt, &data).await else {
       panic!("This test validation case should fail");
     };
     assert_eq!(code, MisuseCode::SchemaValidationFailed);
-    assert_eq!(
-      msg,
-      "Schema validation failed: \"total\" is a required property"
-    );
+    assert_eq!(msg, "\"total\" is a required property");
   }
 
   #[tokio::test]
@@ -269,7 +268,7 @@ mod tests {
       },
     });
 
-    let Err((code, msg)) = validate(&WebhookEventType::Receipt, &data).await else {
+    let Err((code, msg)) = validate(&TransactionEvent::Receipt, &data).await else {
       panic!("This test validation case should fail");
     };
     assert_eq!(code, MisuseCode::SchemaVersionInvalid);
@@ -279,7 +278,7 @@ mod tests {
   #[tokio::test]
   async fn test_validation_of_itinerary_with_payment_should_fail() {
     let data = serde_json::json!({
-      "schema_version": "1.10.0",
+      "schema_version": "2.0.0",
       "header": {
         "subtotal": 1780,
       },
@@ -297,13 +296,13 @@ mod tests {
       },
     });
 
-    let Err((code, msg)) = validate(&WebhookEventType::Itinerary, &data).await else {
+    let Err((code, msg)) = validate(&TransactionEvent::Itinerary, &data).await else {
       panic!("This test validation case should fail");
     };
     assert_eq!(code, MisuseCode::SchemaValidationFailed);
     assert_eq!(
       msg,
-      "Schema validation failed: Additional properties are not allowed ('subtotal' was unexpected)"
+      "Additional properties are not allowed ('subtotal' was unexpected)"
     );
   }
 }

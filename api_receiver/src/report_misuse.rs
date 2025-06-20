@@ -1,5 +1,5 @@
 use tracing::info;
-use versa::protocol::misuse::{MisuseCode, ReportMisuseRequest};
+use versa::protocol::misuse::{Misuse, MisuseCode, ReportMisuseRequest};
 
 pub async fn send(
   client_id: &str,
@@ -12,7 +12,11 @@ pub async fn send(
 
   let payload = ReportMisuseRequest {
     receipt_id,
-    misuse_code,
+    misuse: vec![Misuse {
+      code: misuse_code,
+      rule: None,
+      description: None,
+    }],
   };
 
   let payload_json = serde_json::to_string(&payload).unwrap();

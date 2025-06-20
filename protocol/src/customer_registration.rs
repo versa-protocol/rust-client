@@ -1,6 +1,6 @@
 use versa::{
   client::{customer_registration::CustomerRegistration, ClientError},
-  protocol::customer_registration::{CustomerReference, HandleType},
+  protocol::customer_registration::{CustomerRef, HandleType},
 };
 
 pub async fn register_customer<T>(
@@ -12,10 +12,9 @@ pub async fn register_customer<T>(
 where
   T: CustomerRegistration,
 {
-  let customer_reference = CustomerReference {
+  let customer_reference = CustomerRef {
     handle,
     handle_type,
-    receiver_client_id: None,
     receiver_org_id,
   };
 
@@ -33,10 +32,9 @@ pub async fn deregister_customer<T>(
 where
   T: CustomerRegistration,
 {
-  let customer_reference = CustomerReference {
+  let customer_reference = CustomerRef {
     handle,
     handle_type,
-    receiver_client_id: None,
     receiver_org_id,
   };
 

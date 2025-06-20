@@ -5,8 +5,9 @@ use tracing::info;
 use versa::{
   client_receiver::VersaReceiver,
   protocol::{
-    customer_registration::HandleType, ReceiverPayload, Sender, TransactionHandles, WebhookEvent,
-    WebhookEventType,
+    customer_registration::HandleType,
+    webhook::{TransactionEvent, WebhookEvent, WebhookEventType},
+    ReceiverPayload, Sender, TransactionHandles,
   },
 };
 
@@ -61,12 +62,16 @@ pub async fn target(
   };
 
   let event = body.event;
-  if event != WebhookEventType::Receipt && event != WebhookEventType::Itinerary {
-    info!(
-      "WARN: Received event other than 'receipt' or 'itinerary': {}",
-      event
-    );
-  }
+  let transaction_event: TransactionEvent = match event {
+    WebhookEventType::Receipt => TransactionEvent::Receipt,
+    WebhookEventType::Itinerary => TransactionEvent::Itinerary,
+    _ => {
+      return Err((
+        http::StatusCode::BAD_REQUEST,
+        format!("Unsupported event type: {}", event),
+      ));
+    }
+  };
 
   let ReceiverPayload {
     sender_client_id,
@@ -113,7 +118,7 @@ pub async fn target(
     serde_json::to_string(&data).unwrap()
   );
 
-  match crate::schema::validate(&event, &data).await {
+  match crate::schema::validate(&transaction_event, &data).await {
     Ok(val) => val,
     Err((misuse_code, msg)) => {
       info!("WARN: Schema validation failed: {}", msg);
